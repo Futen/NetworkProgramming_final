@@ -9,14 +9,17 @@ import json
 HOST = '127.0.0.1'
 PORT = int(sys.argv[1])
 
+def SuccessMessage():
+    return dict({'data': 'ok'})
+def FailMessage():
+    return dict({'data': 'gg'})
+
 class MyHandler(ss.StreamRequestHandler):
     def handle(self):
         #print self.request
         while True:
             self.data = self.rfile.readline()[0:-1]
             self.data = json.loads(self.data)
-            print json.dumps(self.data, indent = 4)
-            test = dict({'data':'OK'})
             #self.wfile.write(json.dumps(test))
 class ThreadedTCPServer(ss.ThreadingMixIn, ss.TCPServer):
     pass
