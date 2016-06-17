@@ -1,9 +1,18 @@
 import json
 import time
+import os
+
+def ReadUserData():
+    f = open('UserData.json', 'r')
+    data = json.load(f)
+    f.close()
+    return data
 
 LoginLst = []
-UserData = {}
-ttt = 0
+if os.path.isfile('UserData.json'):
+    UserData = ReadUserData()
+else:
+    UserData = {}
 
 test_time = time.time()
 test_account1 = dict({'account':'fulton84717', 'password':'pig6983152', 'nickname':'Futen',
@@ -78,27 +87,23 @@ def GetFriendRequest(dataIn):
                 out.append(one)
             else:
                 tmp.pop(one, None)
-        return True
+        return out
     else:
-        return False
+        return None
 def UserLogin(dataIn):
     now_time = time.time()
-    if not dataIn['account'] in LoginLst:
-        LoginLst.append(dataIn['account'])
-        UserData[dataIn['account']]['last_login_time'] = now_time
-        return True
-    else: 
-        return False
+    if not dataIn['account'] in LoginLst and dataIn['account'] in UserData:
+        if UserData[dataIn['account']]['password'] == dataIn['password']:
+            LoginLst.append(dataIn['account'])
+            UserData[dataIn['account']]['last_login_time'] = now_time
+            return True
+    return False
 def UserLogout(dataIn):
     if dataIn['account'] in LoginLst:
         LoginLst.remove(dataIn['account'])
         return True
     else:
         return False
-def ReadUserData():
-    f = open('UserData.json', 'r')
-    UserData = json.load(f)
-    f.close()
 def SaveUserData():
     f = open('UserData.json', 'w')
     f.write(json.dumps(UserData, indent = 4))
