@@ -34,7 +34,7 @@ def CreateAccount(data):
         UserData[data['account']] = NewBag()
         UserData[data['account']]['account'] = data['account']
         UserData[data['account']]['password'] = data['password']
-        UserData[data['account']]['nickname'] = data['nickname']
+        #UserData[data['account']]['nickname'] = data['nickname']
         UserData[data['account']]['last_login_time'] = now_time
         UserData[data['account']]['register_time'] = now_time
         return True
@@ -45,8 +45,10 @@ def ModifyAccount(dataIn):
         return False
     else:
         account = dataIn['account']
-        UserData[account]['password'] = dataIn['password']
-        UserData[account]['nickname'] = dataIn['nickname']
+        if 'password' in UserData:
+            UserData[account]['password'] = dataIn['password']
+        if 'nickname' in UserData:
+            UserData[account]['nickname'] = dataIn['nickname']
         return True
 def DeleteAccount(dataIn):
     if dataIn['account'] in UserData:

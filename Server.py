@@ -8,45 +8,49 @@ import json
 import Parameter as Pm
 import DataBase as DB
 
-HOST = '127.0.0.1'
-#HOST = '192.168.1.105'
+#HOST = '127.0.0.1'
+HOST = '192.168.1.105'
 PORT = int(sys.argv[1])
 
-def SuccessMessage():
-    return json.dumps(dict({'data': 'ok'}))
-def FailMessage():
-    return json.dumps(dict({'data': 'gg'}))
+def SuccessMessage(command):
+    return json.dumps(dict({'command':command, 'data': 'ok'}))
+def FailMessage(command):
+    return json.dumps(dict({'command':command, 'data': 'gg'}))
 
 class MyHandler(ss.StreamRequestHandler):
     def handle(self):
-        #print self.request
+        print 'GGWP'
         while True:
             try:
                 recvData = json.loads(self.rfile.readline()[0:-1])
+                print recvData
             except ValueError:
                 break
             command = recvData['command']
             if command == Pm.CREATEACCOUNT:
+                print command
                 result = DB.CreateAccount(recvData)
                 if result:
                     DB.SaveUserData()
-                    self.wfile.write(SuccessMessage())
+                    self.wfile.write(SuccessMessage(command))
                 else:
-                    self.wfile.write(FailMessage())
+                    self.wfile.write(FailMessage(command))
             elif command == Pm.USERLOGIN:
+                print command
                 result = DB.UserLogin(recvData)
                 if result:
                     DB.SaveUserData()
-                    self.wfile.write(SuccessMessage())
+                    self.wfile.write(SuccessMessage(command))
                 else:
-                    self.wfile.write(FailMessage())
+                    self.wfile.write(FailMessage(command))
             elif command == Pm.USERLOGOUT:
+                print command
                 result = DB.UserLogout(recvData)
                 if result:
                     DB.SaveUserData()
-                    self.wfile.write(SuccessMessage())
+                    self.wfile.write(SuccessMessage(command))
                 else:
-                    self.wfile.write(FailMessage())
+                    self.wfile.write(FailMessage(command))
 
             #print DB.UserData
             #self.data = json.loads(self.data)
