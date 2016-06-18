@@ -1,6 +1,7 @@
 import json
 import time
 import os
+import Parameter as Pm
 
 def ReadUserData():
     f = open('UserData.json', 'r')
@@ -69,6 +70,12 @@ def FriendRequest(dataIn):
         return True
     else:
         return False
+def FriendRequestPacket(dataIn):
+    data = {}
+    data['command'] = Pm.FRIENDREQUESTSHOW
+    data['account'] = dataIn['to']
+    data['from'] = dataIn['account']
+    return json.dumps(data)
 def AcceptFriendRequest(dataIn):
     if dataIn['account'] in UserData and dataIn['to'] in UserData:
         if dataIn['to'] in UserData[dataIn['account']]['friend_request']:
@@ -125,6 +132,11 @@ def UserLogout(dataIn):
         if dataIn['account'] in OfflineLst:
             OfflineLst.remove(dataIn['account'])
         LoginLst.remove(dataIn['account'])
+        return True
+    else:
+        return False
+def SearchUser(dataIn):
+    if dataIn['who'] in UserData:
         return True
     else:
         return False

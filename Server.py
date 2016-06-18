@@ -78,6 +78,23 @@ class MyHandler(ss.StreamRequestHandler):
                     else:
                         pass
                         #self.wfile.write(FailMessage(command))
+                elif command == Pm.SEARCHACCOUNT:
+                    print command
+                    result = DB.SearchUser(self.recvData)
+                    if result:
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
+                elif command == Pm.FRIENDREQUEST:
+                    print command
+                    result = DB.FriendRequest(self.recvData)
+                    if result:
+                        if self.recvData['to'] in SocketLst:
+                            sendData = DB.FriendRequestPacket(recvData)
+                            SocketLst[self.recvData['to']].sendall(sendData)
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
