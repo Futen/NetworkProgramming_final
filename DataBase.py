@@ -10,6 +10,7 @@ def ReadUserData():
 
 LoginLst = []
 OnlineLst = []
+OfflineLst = []
 BusyLst = []
 if os.path.isfile('UserData.json'):
     UserData = ReadUserData()
@@ -71,7 +72,7 @@ def FriendRequest(dataIn):
 def AcceptFriendRequest(dataIn):
     if dataIn['account'] in UserData and dataIn['to'] in UserData:
         if dataIn['to'] in UserData[dataIn['account']]['friend_request']:
-            UserData[dataIn['account']]['friend_request'].pop(dataIn['to'], None)
+            UserData[dataIn['account']]['friend_request'].remove(dataIn['to'])
             UserData[dataIn['account']]['friend_lst'].append(dataIn['to'])
             UserData[dataIn['to']]['friend_lst'].append(dataIn['account'])
             return True
@@ -80,15 +81,15 @@ def AcceptFriendRequest(dataIn):
         return False
 def RejectFriendRequest(dataIn):
     if dataIn['account'] in UserData and dataIn['to'] in UserData:
-        UserData[dataIn['account']]['friend_request'].pop(dataIn['to'], None)
+        UserData[dataIn['account']]['friend_request'].remove(dataIn['to'])
         return True
     else:
         return False
 def RemoveFriend(dataIn):
     if dataIn['account'] in UserData and dataIn['to'] in UserData:
         if dataIn['to'] in UserData[dataIn['account']]['friend_lst']:
-            UserData[dataIn['account']]['friend_lst'].pop(dataIn['to'], None)
-            UserData[dataIn['to']]['friend_lst'].pop(dataIn['account'], None)
+            UserData[dataIn['account']]['friend_lst'].remove(dataIn['to'])
+            UserData[dataIn['to']]['friend_lst'].remove(dataIn['account'])
             return True
     return False
 def GetFriendRequest(dataIn):
@@ -99,7 +100,7 @@ def GetFriendRequest(dataIn):
             if one in UserData:
                 out.append(one)
             else:
-                tmp.pop(one, None)
+                tmp.remove(one)
         return out
     else:
         return None
@@ -121,17 +122,25 @@ def UserLogout(dataIn):
             OnlineLst.remove(dataIn['account'])
         if dataIn['account'] in BusyLst:
             BusyLst.remove(dataIn['account'])
+        if dataIn['account'] in OfflineLst:
+            OfflineLst.remove(dataIn['account'])
         LoginLst.remove(dataIn['account'])
         return True
     else:
         return False
 def ChangeState(dataIn):
+    if dataIn['account'] in OnlineLst:
+        OnlineLst.remove(dataIn['account'])
     if dataIn['account'] in BusyLst:
         BusyLst.remove(dataIn['account'])
+    if dataIn['account'] in OfflineLst:
+        OfflineLst.remove(dataIn['account'])
+    if dataIn['state'] == 'Online':
         OnlineLst.append(dataIn['account'])
-    elif dataIn['account'] in OnlineLst:
-        OnlineLst.remove(dataIn['account'])
+    elif dataIn['state'] == 'Busy':
         BusyLst.append(dataIn['account'])
+    elif dataIn['state'] == 'Offline':
+        OfflineLst.append(dataIn['account'])
     else:
         return False
     return True

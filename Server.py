@@ -69,6 +69,15 @@ class MyHandler(ss.StreamRequestHandler):
                     else:
                         self.wfile.write(FailMessage(command))
                     print DB.UserData
+                elif command == Pm.DELETEACCOUNT:
+                    print command
+                    result = DB.DeleteAccount(self.recvData)
+                    if result:
+                        DB.SaveUserData()
+                        #self.wfile.write(SuccessMessage(command))
+                    else:
+                        pass
+                        #self.wfile.write(FailMessage(command))
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
