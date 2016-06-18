@@ -27,3 +27,10 @@ def AddMemberToGroup(dataIn):
                 GroupTable[dataIn['id']]['member'].append(person)
         return True
     return False
+def RemoveMemberFromGroup(dataIn):
+    if dataIn['id'] in GroupTable:
+        person = dataIn['who']
+        if person in GroupTable[dataIn['id']]['member'] and person in DB.UserData:
+            GroupTable[dataIn['id']]['member'].remove(person)
+            return True
+    return False
