@@ -90,9 +90,19 @@ class MyHandler(ss.StreamRequestHandler):
                     result = DB.FriendRequest(self.recvData)
                     if result:
                         if self.recvData['to'] in SocketLst:
-                            sendData = DB.FriendRequestPacket(recvData)
+                            sendData = DB.FriendRequestPacket(self.recvData)
                             SocketLst[self.recvData['to']].sendall(sendData)
                         self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
+                elif command == Pm.CHANGESTATE:
+                    print command
+                    result = DB.ChangeState(self.recvData)
+                    if result:
+                        self.wfile.write(SuccessMessage(command))
+                        print DB.OnlineLst
+                        print DB.BusyLst
+                        print DB.OfflineLst
                     else:
                         self.wfile.write(FailMessage(command))
                 #print DB.UserData

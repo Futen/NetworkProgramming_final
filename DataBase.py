@@ -147,11 +147,11 @@ def ChangeState(dataIn):
         BusyLst.remove(dataIn['account'])
     if dataIn['account'] in OfflineLst:
         OfflineLst.remove(dataIn['account'])
-    if dataIn['state'] == 'Online':
+    if dataIn['state'] == 'online':
         OnlineLst.append(dataIn['account'])
-    elif dataIn['state'] == 'Busy':
+    elif dataIn['state'] == 'busy':
         BusyLst.append(dataIn['account'])
-    elif dataIn['state'] == 'Offline':
+    elif dataIn['state'] == 'offline':
         OfflineLst.append(dataIn['account'])
     else:
         return False
