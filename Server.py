@@ -12,6 +12,7 @@ import DataBase as DB
 HOST = '192.168.1.105'
 PORT = int(sys.argv[1])
 
+SocketLst = {}
 def SuccessMessage(command):
     return json.dumps(dict({'command':command, 'data': 'ok'}))
 def FailMessage(command):
@@ -20,41 +21,65 @@ def FailMessage(command):
 class MyHandler(ss.StreamRequestHandler):
     def handle(self):
         print 'GGWP'
-        while True:
-            try:
-                recvData = json.loads(self.rfile.readline()[0:-1])
-                print recvData
-            except ValueError:
-                break
-            command = recvData['command']
-            if command == Pm.CREATEACCOUNT:
-                print command
-                result = DB.CreateAccount(recvData)
-                if result:
-                    DB.SaveUserData()
-                    self.wfile.write(SuccessMessage(command))
-                else:
-                    self.wfile.write(FailMessage(command))
-            elif command == Pm.USERLOGIN:
-                print command
-                result = DB.UserLogin(recvData)
-                if result:
-                    DB.SaveUserData()
-                    self.wfile.write(SuccessMessage(command))
-                else:
-                    self.wfile.write(FailMessage(command))
-            elif command == Pm.USERLOGOUT:
-                print command
-                result = DB.UserLogout(recvData)
-                if result:
-                    DB.SaveUserData()
-                    self.wfile.write(SuccessMessage(command))
-                else:
-                    self.wfile.write(FailMessage(command))
+        try:
+            while True:
+                try:
+                    self.recvData = json.loads(self.rfile.readline()[0:-1])
+                    #print self.recvData
+                except ValueError:
+                    break
+                command = self.recvData['command']
+                if command == Pm.CREATEACCOUNT:
+                    print command
+                    result = DB.CreateAccount(self.recvData)
+                    if result:
+                        DB.SaveUserData()
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
+                elif command == Pm.USERLOGIN:
+                    print command
+                    result = DB.UserLogin(self.recvData)
+                    SocketLst[self.recvData['account']] = self.request
+                    #print SocketLst
+                    if result:
+                        DB.SaveUserData()
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
+                elif command == Pm.USERLOGOUT:
+                    print command
+                    result = DB.UserLogout(self.recvData)
+                    if result:
+                        DB.SaveUserData()
+                        #SocketLst.pop(self.recvData['account'], None)
+                        #print SocketLst
+                        break
+                        #self.wfile.write(SuccessMessage(command))
+                    else:
+                        pass
+                        #self.wfile.write(FailMessage(command))
 
-            #print DB.UserData
-            #self.data = json.loads(self.data)
-            #self.wfile.write(self.data)
+                elif command == Pm.MODIFYACCOUNT:
+                    print command
+                    result = DB.ModifyAccount(self.recvData)
+                    if result:
+                        DB.SaveUserData()
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
+                    print DB.UserData
+                #print DB.UserData
+                #self.data = json.loads(self.data)
+                #self.wfile.write(self.data)
+        except socket.error:
+            pass
+        for one in SocketLst:
+            if SocketLst[one] is self.request:
+                key = one
+                break
+        SocketLst.pop(key, None)
+        print SocketLst
 class ThreadedTCPServer(ss.ThreadingMixIn, ss.TCPServer):
     pass
 #def client(ip, port, message):

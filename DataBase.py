@@ -26,8 +26,8 @@ test_data = dict({
                 'Futen': test_account2
                 })
 def NewBag():
-    a = dict({'account':'', 'password':'', 'nickname':'', 'last_login_time':test_time, 'register_time':test_time, 'friend_request':[],
-              'frien_lst':[]
+    a = dict({'account':'', 'password':'', 'nickname':'', 'last_login_time':test_time, 
+        'register_time':test_time, 'friend_request':[], 'birthday':'', 'frien_lst':[]
         })
     return a
 def CreateAccount(data):
@@ -51,6 +51,8 @@ def ModifyAccount(dataIn):
             UserData[account]['password'] = dataIn['password']
         if 'nickname' in dataIn:
             UserData[account]['nickname'] = dataIn['nickname']
+        if 'birthday' in dataIn:
+            UserData[account]['birthday'] = dataIn['birthday']
         return True
 def DeleteAccount(dataIn):
     if dataIn['account'] in UserData:
@@ -116,19 +118,19 @@ def UserLogin(dataIn):
 def UserLogout(dataIn):
     if dataIn['account'] in LoginLst:
         if dataIn['account'] in OnlineLst:
-            OnlineLst.pop(dataIn['account'], None)
+            OnlineLst.remove(dataIn['account'])
         if dataIn['account'] in BusyLst:
-            BusyLst.pop(dataIn['account'], None)
+            BusyLst.remove(dataIn['account'])
         LoginLst.remove(dataIn['account'])
         return True
     else:
         return False
 def ChangeState(dataIn):
     if dataIn['account'] in BusyLst:
-        BusyLst.pop(dataIn['account'], None)
+        BusyLst.remove(dataIn['account'])
         OnlineLst.append(dataIn['account'])
     elif dataIn['account'] in OnlineLst:
-        OnlineLst.pop(dataIn['account'], None)
+        OnlineLst.remove(dataIn['account'])
         BusyLst.append(dataIn['account'])
     else:
         return False
