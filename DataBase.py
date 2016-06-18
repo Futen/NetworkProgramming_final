@@ -45,9 +45,9 @@ def ModifyAccount(dataIn):
         return False
     else:
         account = dataIn['account']
-        if 'password' in UserData:
+        if 'password' in dataIn:
             UserData[account]['password'] = dataIn['password']
-        if 'nickname' in UserData:
+        if 'nickname' in dataIn:
             UserData[account]['nickname'] = dataIn['nickname']
         return True
 def DeleteAccount(dataIn):
@@ -80,6 +80,13 @@ def RejectFriendRequest(dataIn):
         return True
     else:
         return False
+def RemoveFriend(dataIn):
+    if dataIn['account'] in UserData and dataIn['to'] in UserData:
+        if dataIn['to'] in UserData[dataIn['account']]['friend_lst']:
+            UserData[dataIn['account']]['friend_lst'].pop(dataIn['to'], None)
+            UserData[dataIn['to']]['friend_lst'].pop(dataIn['account'], None)
+            return True
+    return False
 def GetFriendRequest(dataIn):
     if dataIn['account'] in UserData:
         tmp = UserData[dataIn['account']]['friend_request']
