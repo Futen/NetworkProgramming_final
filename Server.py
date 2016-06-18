@@ -100,11 +100,14 @@ class MyHandler(ss.StreamRequestHandler):
                 #self.wfile.write(self.data)
         except socket.error:
             pass
-        for one in SocketLst:
-            if SocketLst[one] is self.request:
-                key = one
-                break
-        SocketLst.pop(key, None)
+        try:
+            for one in SocketLst:
+                if SocketLst[one] is self.request:
+                    key = one
+                    break
+            SocketLst.pop(key, None)
+        except KeyError:
+            pass
         print SocketLst
 class ThreadedTCPServer(ss.ThreadingMixIn, ss.TCPServer):
     pass
