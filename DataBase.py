@@ -9,6 +9,8 @@ def ReadUserData():
     return data
 
 LoginLst = []
+OnlineLst = []
+BusyLst = []
 if os.path.isfile('UserData.json'):
     UserData = ReadUserData()
 else:
@@ -101,18 +103,36 @@ def GetFriendRequest(dataIn):
         return None
 def UserLogin(dataIn):
     now_time = time.time()
-    if not dataIn['account'] in LoginLst and dataIn['account'] in UserData:
+    #if not dataIn['account'] in LoginLst and dataIn['account'] in UserData:
+    if dataIn['account'] in UserData:
         if UserData[dataIn['account']]['password'] == dataIn['password']:
-            LoginLst.append(dataIn['account'])
+            if not dataIn['account'] in LoginLst:
+                LoginLst.append(dataIn['account'])
+            if not dataIn['account'] in OnlineLst:
+                OnlineLst.append(dataIn['account'])
             UserData[dataIn['account']]['last_login_time'] = now_time
             return True
     return False
 def UserLogout(dataIn):
     if dataIn['account'] in LoginLst:
+        if dataIn['account'] in OnlineLst:
+            OnlineLst.pop(dataIn['account'], None)
+        if dataIn['account'] in BusyLst:
+            BusyLst.pop(dataIn['account'], None)
         LoginLst.remove(dataIn['account'])
         return True
     else:
         return False
+def ChangeState(dataIn):
+    if dataIn['account'] in BusyLst:
+        BusyLst.pop(dataIn['account'], None)
+        OnlineLst.append(dataIn['account'])
+    elif dataIn['account'] in OnlineLst:
+        OnlineLst.pop(dataIn['account'], None)
+        BusyLst.append(dataIn['account'])
+    else:
+        return False
+    return True
 def SaveUserData():
     f = open('UserData.json', 'w')
     f.write(json.dumps(UserData, indent = 4))
