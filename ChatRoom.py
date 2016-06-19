@@ -25,6 +25,7 @@ def CreateGroup(dataIn):
         GroupIndex += 1
         tmp['name'] = dataIn['name']
         tmp['owner'] = dataIn['account']
+        tmp['member'].append(dataIn['account'])
         GroupTable[tmp['id']] = tmp
         return True
     except IndexError:
@@ -53,12 +54,15 @@ def AskingUpdate(dataIn):
     out = []
     for key in GroupTable:
         tmp = GroupTable[key]
-        if who == tmp['owner'] or who in tmp['member']:
+        if who in tmp['member']:
             out.append(key)
             out.append(tmp['name'])
     data['group'] = out
     return json.dumps(data)
 def SaveGroupData():
+    for ID in GroupTable:
+        if len(GroupTable[ID]) == 0:
+            GroupTable.pop(ID, None)
     f = open('GroupData.json','w')
     f.write(json.dumps(GroupTable, indent=4))
     f.close()

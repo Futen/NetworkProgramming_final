@@ -150,6 +150,7 @@ class MyHandler(ss.StreamRequestHandler):
                     print command
                     result = CR.AddMemberToGroup(self.recvData)  
                     if result:
+                        CR.SaveGroupData()
                         self.wfile.write(SuccessMessage(command))
                     else:
                         self.wfile.write(FailMessage(command))
