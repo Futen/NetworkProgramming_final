@@ -16,8 +16,16 @@ REJECTINVITE = 'RejectInvite'
 GETPROFILE = 'getProfile'
 CHATTOONE = 'ChatToOne'
 GETFRIENDPROFILE = 'getFriendProfile'
+SOUNDREQUEST = 'RequestForMic'
+SENDSOUND = 'SendVoice'
 
 CREATEGROUP = 'CreateGroup'
 ADDMEMBER = 'AddMember'
 REMOVEMEMBER = 'LeaveGroup'
 CHATTOGROUP = 'ChatToGroup'
+
+REQUESTIP = 'RequestIP'
+
+PIKAREQUEST = 'RequestPika'
+ACCEPTPIKA = 'PikaAccept'
+REJECTPIKA = 'PikaReject'

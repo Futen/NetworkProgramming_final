@@ -14,14 +14,37 @@ HOST = '192.168.1.105'
 PORT = int(sys.argv[1])
 
 SocketLst = {}
+AddrLst = {}
 def SuccessMessage(command):
     return json.dumps(dict({'command':command, 'data': 'ok'}))
 def FailMessage(command):
     return json.dumps(dict({'command':command, 'data': 'gg'}))
-
+def RequestIP(dataIn):
+    data = {}
+    who = dataIn['who']
+    data['command'] = dataIn['command']
+    if who in SocketLst and who in AddrLst:
+        data['ip'] = list(AddrLst[who][0].client_address)
+        data['ip'][1] = AddrLst[who][1]
+        data['port'] = AddrLst[who][1]
+    return json.dumps(data)
+def PikaRequest(dataIn):
+    data = {'command':dataIn['command']}
+    if dataIn['to'] in SocketLst and dataIn['to'] in AddrLst:
+        data['from'] = dataIn['account']
+    return json.dumps(data)
+def PikaAccept(dataIn):
+    data = {'command':dataIn['command']}
+    data['ip'] = AddrLst[dataIn['account']][0].client_address[0]
+    return json.dumps(data)
+def PikaReject(dataIn):
+    data = {'command':dataIn['command']}
+    data['from'] = dataIn['account']
+    return json.dumps(data)
 class MyHandler(ss.StreamRequestHandler):
     def handle(self):
         print 'GGWP'
+        print (self.client_address)
         try:
             while True:
                 try:
@@ -42,9 +65,13 @@ class MyHandler(ss.StreamRequestHandler):
                     print command
                     account = self.recvData['account']
                     result = DB.UserLogin(self.recvData)
-                    SocketLst[self.recvData['account']] = self.request
                     #print SocketLst
                     if result:
+                        print self.recvData
+                        SocketLst[self.recvData['account']] = self.request
+                        AddrLst[self.recvData['account']] = []
+                        AddrLst[self.recvData['account']].append(self)
+                        AddrLst[self.recvData['account']].append(self.recvData['port'])
                         DB.SaveUserData()
                         self.wfile.write(SuccessMessage(command))
                     else:
@@ -143,6 +170,16 @@ class MyHandler(ss.StreamRequestHandler):
                     sendData = CR.CreateMessage(self.recvData)
                     if self.recvData['to'] in SocketLst:
                         SocketLst[self.recvData['to']].sendall(sendData)
+                elif command == Pm.SOUNDREQUEST:
+                    print command
+                    sendData = CR.SoundRequest(self.recvData)
+                    if self.recvData['to'] in SocketLst:
+                        SocketLst[self.recvData['to']].sendall(sendData) 
+                elif command == Pm.SENDSOUND:
+                    print command
+                    sendData = CR.CreateSoundMessage(self.recvData)
+                    if self.recvData['to'] in SocketLst:
+                        SocketLst[self.recvData['to']].sendall(sendData)
                 elif command == Pm.CREATEGROUP:
                     print command
                     result = CR.CreateGroup(self.recvData)
@@ -169,6 +206,22 @@ class MyHandler(ss.StreamRequestHandler):
                     for member in sendData['member']:
                         if member in SocketLst and not member == self.recvData['account']:
                             SocketLst[member].sendall(sendStr)
+                elif command == Pm.REQUESTIP:
+                    print command
+                    sendData = RequestIP(self.recvData)
+                    self.wfile.write(sendData)
+                elif command == Pm.PIKAREQUEST:
+                    print command
+                    sendData = PikaRequest(self.recvData)
+                    SocketLst[self.recvData['to']].sendall(sendData)
+                elif command == Pm.ACCEPTPIKA:
+                    print command
+                    sendData = PikaAccept(self.recvData)
+                    SocketLst[self.recvData['to']].sendall(sendData)
+                elif command == Pm.REJECTPIKA:
+                    print command
+                    sendData = PikaReject(self.recvData)
+                    SocketLst[self.recvData['to']].sendall(sendData)
 
                 #print DB.UserData
                 #self.data = json.loads(self.data)

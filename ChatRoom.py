@@ -48,6 +48,12 @@ def CreateMessage(dataIn):
     data = dict({'command':dataIn['command'], 'account':dataIn['to'], 'from':dataIn['account'],
                 'message':dataIn['message']})
     return json.dumps(data)
+def SoundRequest(dataIn):
+    data = dict({'command':dataIn['command'], 'from':dataIn['account']})
+    return json.dumps(data)
+def CreateSoundMessage(dataIn):
+    data = dict({'command':dataIn['command'], 'from':dataIn['account'], 'voice':dataIn['voice']})
+    return json.dumps(data)
 def CreateGroupMessageDict(dataIn):
     name = DB.UserData[dataIn['account']]['nickname'] + '(' + dataIn['account']  + ')'
     data = dict({'command':dataIn['command'], 'id':dataIn['id'], 'from':name,
