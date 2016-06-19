@@ -163,6 +163,11 @@ def UserLogout(dataIn):
         return True
     else:
         return False
+def GetFriendProfile(dataIn):
+    who = UserData[dataIn['who']]
+    data = dict({'command':dataIn['command'], 'nickname':who['nickname'], 'birthday':who['birthday']
+                , 'motto':who['motto']})
+    return json.dumps(data)
 def SearchUser(dataIn):
     if dataIn['who'] in UserData:
         return True

@@ -75,6 +75,10 @@ class MyHandler(ss.StreamRequestHandler):
                     print command
                     sendData = DB.GetProfile(self.recvData)
                     self.wfile.write(sendData)
+                elif command == Pm.GETFRIENDPROFILE:
+                    print command
+                    sendData = DB.GetFriendProfile(self.recvData)
+                    self.wfile.write(sendData)
                 elif command == Pm.DELETEACCOUNT:
                     print command
                     result = DB.DeleteAccount(self.recvData)
@@ -138,6 +142,10 @@ class MyHandler(ss.StreamRequestHandler):
                     print command
                     sendData = CR.CreateMessage(self.recvData)
                     SocketLst[self.recvData['to']].sendall(sendData)
+                elif command == Pm.CREATEGROUP:
+                    print command
+                    result = CR.CreateGroup(self.recvData)
+                    CR.SaveGroupData()
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
