@@ -146,6 +146,13 @@ class MyHandler(ss.StreamRequestHandler):
                     print command
                     result = CR.CreateGroup(self.recvData)
                     CR.SaveGroupData()
+                elif command == Pm.ADDMEMBER:
+                    print command
+                    result = CR.AddMemberToGroup(self.recvData)  
+                    if result:
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)

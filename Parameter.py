@@ -18,3 +18,4 @@ CHATTOONE = 'ChatToOne'
 GETFRIENDPROFILE = 'getFriendProfile'
 
 CREATEGROUP = 'CreateGroup'
+ADDMEMBER = 'AddMember'
