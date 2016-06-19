@@ -39,7 +39,7 @@ def AddMemberToGroup(dataIn):
     return False
 def RemoveMemberFromGroup(dataIn):
     if dataIn['id'] in GroupTable:
-        person = dataIn['who']
+        person = dataIn['account']
         if person in GroupTable[dataIn['id']]['member'] and person in DB.UserData:
             GroupTable[dataIn['id']]['member'].remove(person)
             return True
@@ -48,6 +48,11 @@ def CreateMessage(dataIn):
     data = dict({'command':dataIn['command'], 'account':dataIn['to'], 'from':dataIn['account'],
                 'message':dataIn['message']})
     return json.dumps(data)
+def CreateGroupMessageDict(dataIn):
+    name = DB.UserData[dataIn['account']]['nickname'] + '(' + dataIn['account']  + ')'
+    data = dict({'command':dataIn['command'], 'id':dataIn['id'], 'from':name,
+        'message':dataIn['message'], 'member':GroupTable[dataIn['id']]['member']})
+    return data 
 def AskingUpdate(dataIn):
     data = DB.AskingUpdate(dataIn)
     who = data['account']
@@ -55,8 +60,13 @@ def AskingUpdate(dataIn):
     for key in GroupTable:
         tmp = GroupTable[key]
         if who in tmp['member']:
+            member_lst = []
+            for one in tmp['member']:
+                if not one == who:
+                    member_lst.append(one)
             out.append(key)
             out.append(tmp['name'])
+            out.append(member_lst)
     data['group'] = out
     return json.dumps(data)
 def SaveGroupData():

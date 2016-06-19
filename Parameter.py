@@ -19,3 +19,5 @@ GETFRIENDPROFILE = 'getFriendProfile'
 
 CREATEGROUP = 'CreateGroup'
 ADDMEMBER = 'AddMember'
+REMOVEMEMBER = 'LeaveGroup'
+CHATTOGROUP = 'ChatToGroup'

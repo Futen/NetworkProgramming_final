@@ -141,7 +141,8 @@ class MyHandler(ss.StreamRequestHandler):
                 elif command == Pm.CHATTOONE:
                     print command
                     sendData = CR.CreateMessage(self.recvData)
-                    SocketLst[self.recvData['to']].sendall(sendData)
+                    if self.recvData['to'] in SocketLst:
+                        SocketLst[self.recvData['to']].sendall(sendData)
                 elif command == Pm.CREATEGROUP:
                     print command
                     result = CR.CreateGroup(self.recvData)
@@ -154,6 +155,21 @@ class MyHandler(ss.StreamRequestHandler):
                         self.wfile.write(SuccessMessage(command))
                     else:
                         self.wfile.write(FailMessage(command))
+                elif command == Pm.REMOVEMEMBER:
+                    print command
+                    result = CR.RemoveMemberFromGroup(self.recvData)
+                    if result:
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
+                elif command == Pm.CHATTOGROUP:
+                    print command
+                    sendData = CR.CreateGroupMessageDict(self.recvData)
+                    sendStr = json.dumps(sendData)
+                    for member in sendData['member']:
+                        if member in SocketLst and not member == self.recvData['account']:
+                            SocketLst[member].sendall(sendStr)
+
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
