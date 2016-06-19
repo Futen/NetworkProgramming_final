@@ -7,6 +7,7 @@ import threading
 import json
 import Parameter as Pm
 import DataBase as DB
+import ChatRoom as CR
 
 #HOST = '127.0.0.1'
 HOST = '192.168.1.105'
@@ -133,6 +134,10 @@ class MyHandler(ss.StreamRequestHandler):
                     result = DB.AcceptFriendRequest(self.recvData)
                     if not result:
                         print 'reject gg'
+                elif command == Pm.CHATTOONE:
+                    print command
+                    sendData = CR.CreateMessage(self.recvData)
+                    SocketLst[self.recvData['to']].sendall(sendData)
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)

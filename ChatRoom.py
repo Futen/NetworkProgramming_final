@@ -15,6 +15,7 @@ def CreateGroup(dataIn):
     tmp = NewBag()
     try:
         tmp['id'] = str(GroupIndex)
+        GroupIndex += 1
         tmp['name'] = dataIn['name']
         GroupTable[tmp['id']] = tmp
         return True
@@ -34,3 +35,7 @@ def RemoveMemberFromGroup(dataIn):
             GroupTable[dataIn['id']]['member'].remove(person)
             return True
     return False
+def CreateMessage(dataIn):
+    data = dict({'command':dataIn['command'], 'account':dataIn['to'], 'from':dataIn['account'],
+                'message':dataIn['message']})
+    return json.dumps(data)
