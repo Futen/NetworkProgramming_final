@@ -1,11 +1,12 @@
 import json
 import os
-import numpy as np
 
-F_NAME = 'LogData.npy'
+F_NAME = 'LogData.json'
 F_NAME_G = 'LogDataGroup.json'
 if os.path.isfile(F_NAME):
-    LogData = list(np.load(F_NAME))
+    f = open(F_NAME, 'r')
+    LogData = json.load(f)['data']
+    f.close()
 else:
     LogData = []
 if os.path.isfile(F_NAME_G):
@@ -37,7 +38,9 @@ def FindLog(account1, account2):
             return log
     return None
 def SaveLog():
-    np.save(F_NAME, LogData)
+    f = open(F_NAME, 'w')
+    f.write(json.dumps({'data':LogData}, indent=4))
+    f.close()
 def SaveGroupLog():
     f = open(F_NAME_G, 'w')
     f.write(json.dumps(LogDataGroup, indent=4))
@@ -51,7 +54,7 @@ def CreateMessage(From, To, Message):
     Msg['from'] = From
     Msg['to'] = To
     Msg['message'] = Message
-    log['data'] = list(log['data'])
+    log['data'] = log['data']
     log['data'].append(Msg)
     SaveLog()
     return True
