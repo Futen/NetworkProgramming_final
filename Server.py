@@ -87,14 +87,23 @@ class MyHandler(ss.StreamRequestHandler):
                         self.wfile.write(FailMessage(command))
                 elif command == Pm.FRIENDREQUEST:
                     print command
+                    print self.recvData
                     result = DB.FriendRequest(self.recvData)
+                    print result
                     if result:
+                        DB.SaveUserData()
                         if self.recvData['to'] in SocketLst:
                             sendData = DB.FriendRequestPacket(self.recvData)
                             SocketLst[self.recvData['to']].sendall(sendData)
-                        self.wfile.write(SuccessMessage(command))
+                        #self.wfile.write(SuccessMessage(command))
                     else:
-                        self.wfile.write(FailMessage(command))
+                        pass
+                        #self.wfile.write(FailMessage(command))
+                elif command == Pm.SHOWFRIENDREQUEST:
+                    print command
+                    data = DB.GetAllFriendRequest(self.recvData)
+                    print data
+                    self.wfile.write(data)
                 elif command == Pm.CHANGESTATE:
                     print command
                     result = DB.ChangeState(self.recvData)
@@ -105,10 +114,31 @@ class MyHandler(ss.StreamRequestHandler):
                         print DB.OfflineLst
                     else:
                         self.wfile.write(FailMessage(command))
+                elif command == Pm.ASKINGINFO:
+                    print command
+                    data = DB.AskingUpdate(self.recvData)
+                    self.wfile.write(data)
+                elif command == Pm.ACCEPTINVITE:
+                    print command
+                    result = DB.AcceptFriendRequest(self.recvData)
+                    if not result:
+                        print 'accept gg'
+                elif command == Pm.REJECTINVITE:
+                    print command
+                    result = DB.AcceptFriendRequest(self.recvData)
+                    if not result:
+                        print 'reject gg'
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
         except socket.error:
+            a = self.recvData['account']
+            if a in DB.OnlineLst:
+                DB.OnlineLst.remove(a)
+            elif a in DB.BusyLst:
+                DB.BusyLst.remove(a)
+            elif a in DB.OfflineLst:
+                DB.OfflineLst.remove(a)
             pass
         try:
             for one in SocketLst:

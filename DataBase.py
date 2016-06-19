@@ -29,7 +29,7 @@ test_data = dict({
                 })
 def NewBag():
     a = dict({'account':'', 'password':'', 'nickname':'', 'last_login_time':test_time, 
-        'register_time':test_time, 'friend_request':[], 'birthday':'', 'frien_lst':[]
+        'register_time':test_time, 'friend_request':[], 'birthday':'', 'friend_lst':[]
         })
     return a
 def CreateAccount(data):
@@ -70,25 +70,45 @@ def FriendRequest(dataIn):
         return True
     else:
         return False
+def GetState(account):
+    if account in OnlineLst:
+        return 'online'
+    elif account in BusyLst:
+        return 'busy'
+    else:
+        return 'offline'
+def AskingUpdate(dataIn):
+    info = UserData[dataIn['account']]
+    tmp = []
+    for one in UserData[dataIn['account']]['friend_lst']:
+        tmp.append(one)
+        tmp.append(UserData[one]['nickname'])
+        tmp.append(GetState(one))
+    out = dict({'command':dataIn['command'], 'friend':tmp, 'group':[]})
+    return json.dumps(out)
 def FriendRequestPacket(dataIn):
     data = {}
     data['command'] = Pm.FRIENDREQUESTSHOW
     data['account'] = dataIn['to']
     data['from'] = dataIn['account']
     return json.dumps(data)
+def GetAllFriendRequest(dataIn):
+    data = {'command':dataIn['command'], 'account':dataIn['account'], 
+            'friend_request':UserData[dataIn['account']]['friend_request']}
+    return json.dumps(data)
 def AcceptFriendRequest(dataIn):
-    if dataIn['account'] in UserData and dataIn['to'] in UserData:
-        if dataIn['to'] in UserData[dataIn['account']]['friend_request']:
-            UserData[dataIn['account']]['friend_request'].remove(dataIn['to'])
-            UserData[dataIn['account']]['friend_lst'].append(dataIn['to'])
-            UserData[dataIn['to']]['friend_lst'].append(dataIn['account'])
+    if dataIn['account'] in UserData and dataIn['from'] in UserData:
+        if dataIn['from'] in UserData[dataIn['account']]['friend_request']:
+            UserData[dataIn['account']]['friend_request'].remove(dataIn['from'])
+            UserData[dataIn['account']]['friend_lst'].append(dataIn['from'])
+            UserData[dataIn['from']]['friend_lst'].append(dataIn['account'])
             return True
         return False
     else:
         return False
 def RejectFriendRequest(dataIn):
-    if dataIn['account'] in UserData and dataIn['to'] in UserData:
-        UserData[dataIn['account']]['friend_request'].remove(dataIn['to'])
+    if dataIn['account'] in UserData and dataIn['from'] in UserData:
+        UserData[dataIn['account']]['friend_request'].remove(dataIn['from'])
         return True
     else:
         return False
