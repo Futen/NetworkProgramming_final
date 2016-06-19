@@ -126,7 +126,7 @@ class MyHandler(ss.StreamRequestHandler):
                         self.wfile.write(FailMessage(command))
                 elif command == Pm.ASKINGINFO:
                     print command
-                    data = DB.AskingUpdate(self.recvData)
+                    data = CR.AskingUpdate(self.recvData)
                     self.wfile.write(data)
                 elif command == Pm.ACCEPTINVITE:
                     print command

@@ -47,7 +47,18 @@ def CreateMessage(dataIn):
     data = dict({'command':dataIn['command'], 'account':dataIn['to'], 'from':dataIn['account'],
                 'message':dataIn['message']})
     return json.dumps(data)
+def AskingUpdate(dataIn):
+    data = DB.AskingUpdate(dataIn)
+    who = data['account']
+    out = []
+    for key in GroupTable:
+        tmp = GroupTable[key]
+        if who == tmp['owner'] or who in tmp['member']:
+            out.append(key)
+            out.append(tmp['name'])
+    data['group'] = out
+    return json.dumps(data)
 def SaveGroupData():
     f = open('GroupData.json','w')
-    f.write(json.dumps(GroupTable))
+    f.write(json.dumps(GroupTable, indent=4))
     f.close()

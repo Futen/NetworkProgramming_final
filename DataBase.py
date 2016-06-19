@@ -2,6 +2,7 @@ import json
 import time
 import os
 import Parameter as Pm
+import ChatRoom as CR
 
 def ReadUserData():
     f = open('UserData.json', 'r')
@@ -92,8 +93,8 @@ def AskingUpdate(dataIn):
         tmp.append(one)
         tmp.append(UserData[one]['nickname'])
         tmp.append(GetState(one))
-    out = dict({'command':dataIn['command'], 'friend':tmp, 'group':[]})
-    return json.dumps(out)
+    out = dict({'command':dataIn['command'], 'account':dataIn['account'], 'friend':tmp, 'group':[]})
+    return out
 def FriendRequestPacket(dataIn):
     data = {}
     data['command'] = Pm.FRIENDREQUESTSHOW
