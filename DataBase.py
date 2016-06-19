@@ -29,7 +29,7 @@ test_data = dict({
                 })
 def NewBag():
     a = dict({'account':'', 'password':'', 'nickname':'', 'last_login_time':test_time, 
-        'register_time':test_time, 'friend_request':[], 'birthday':'', 'friend_lst':[]
+        'register_time':test_time, 'friend_request':[], 'birthday':'', 'friend_lst':[], 'motto':''
         })
     return a
 def CreateAccount(data):
@@ -55,6 +55,8 @@ def ModifyAccount(dataIn):
             UserData[account]['nickname'] = dataIn['nickname']
         if 'birthday' in dataIn:
             UserData[account]['birthday'] = dataIn['birthday']
+        if 'motto' in dataIn:
+            UserData[account]['motto'] = dataIn['motto']
         return True
 def DeleteAccount(dataIn):
     if dataIn['account'] in UserData:
@@ -70,6 +72,12 @@ def FriendRequest(dataIn):
         return True
     else:
         return False
+def GetProfile(dataIn):
+    account = dataIn['account']
+    data = dict({'command':dataIn['command'], 'nickname':UserData[account]['nickname'], 
+        'birthday':UserData[account]['birthday'], 'motto':UserData[account]['motto']})
+    return json.dumps(data)
+
 def GetState(account):
     if account in OnlineLst:
         return 'online'

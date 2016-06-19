@@ -39,6 +39,7 @@ class MyHandler(ss.StreamRequestHandler):
                         self.wfile.write(FailMessage(command))
                 elif command == Pm.USERLOGIN:
                     print command
+                    account = self.recvData['account']
                     result = DB.UserLogin(self.recvData)
                     SocketLst[self.recvData['account']] = self.request
                     #print SocketLst
@@ -69,6 +70,10 @@ class MyHandler(ss.StreamRequestHandler):
                     else:
                         self.wfile.write(FailMessage(command))
                     print DB.UserData
+                elif command == Pm.GETPROFILE:
+                    print command
+                    sendData = DB.GetProfile(self.recvData)
+                    self.wfile.write(sendData)
                 elif command == Pm.DELETEACCOUNT:
                     print command
                     result = DB.DeleteAccount(self.recvData)
@@ -132,14 +137,16 @@ class MyHandler(ss.StreamRequestHandler):
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
         except socket.error:
-            a = self.recvData['account']
+            a = account
             if a in DB.OnlineLst:
                 DB.OnlineLst.remove(a)
-            elif a in DB.BusyLst:
+            if a in DB.BusyLst:
                 DB.BusyLst.remove(a)
-            elif a in DB.OfflineLst:
+            if a in DB.OfflineLst:
                 DB.OfflineLst.remove(a)
-            pass
+            if a in DB.LoginLst:
+                DB.LoginLst.remove(a)
+
         try:
             for one in SocketLst:
                 if SocketLst[one] is self.request:
@@ -148,6 +155,7 @@ class MyHandler(ss.StreamRequestHandler):
             SocketLst.pop(key, None)
         except KeyError:
             pass
+
         print SocketLst
 class ThreadedTCPServer(ss.ThreadingMixIn, ss.TCPServer):
     pass
