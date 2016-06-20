@@ -8,8 +8,14 @@ import ttk
 import time
 import pyaudio
 import Log
+import subprocess
 
 
+PIKA_SER = 'C:/Python27/python.exe Server.py'
+PIKA_Cli = 'C:/Python27/python.exe pikaclient.py'
+
+
+""" for user to enter server's IP port """
 class ServerIP_Port:
 
     def __init__(self, master):
@@ -37,6 +43,8 @@ class ServerIP_Port:
         print "Port : " + str(Server['port'])
         root.quit()
 
+
+""" A function to pop up error message """
 class errorMessage:
     
     def __init__(self, message):
@@ -49,6 +57,8 @@ class errorMessage:
         self.button = Button(self.top, text="OK", command=self.top.destroy)
         self.button.pack()
 
+
+""" Let user to do offline test """
 class Test:
 
     def __init__(self):
@@ -76,8 +86,7 @@ class Test:
         self.button_friend2 = Button(self.testTop, text="Friend req2", command=self.friend2)
         self.button_friend2.pack()
 
-
-
+    """ simulate a friend give you message """
     def ChatTest(self):
         global ChatFrom, newFriendMsg, loadFriendMsg
         ChatFrom = {'from':'a', 'message':"Hello\n\n"}
@@ -85,7 +94,6 @@ class Test:
             newFriendMsg = 1
         else:
             loadFriendMsg = 1
-
 
     def ChatTest2(self):
         global ChatFrom, newFriendMsg, loadFriendMsg
@@ -95,6 +103,7 @@ class Test:
         else:
             loadFriendMsg = 1
 
+    """ simulate a user send messageto group """
     def groupChatTest(self):
         global ChatFromGroup, newGroupMsg, loadGroupMsg
         ChatFromGroup = ['group1', 'Andy', "Hello\n\n"]    # msg to  group 1 from Andy
@@ -111,6 +120,7 @@ class Test:
         else:
             loadGroupMsg = 1
     
+    """ simulate friend tree update """
     def update(self):
         global friendList, groupList, updateTree
         msg = {'friend':['a','apple','online', 'b','banana','offline', 'c','cucumber','busy'], 'group':['group1','NTHU','group2','NTU','group3','SSHU']}
@@ -128,6 +138,7 @@ class Test:
         groupList = msg['group']
         updateTree = 1
 
+    """ simulate friend request arrive """
     def friend(self):
         global recvFriendReq, reqAccount
         msg = {'account':'b'}
@@ -140,7 +151,7 @@ class Test:
         reqAccount = msg['account']
         recvFriendReq = 1
         
-
+""" A class for user login or register """
 class RegisterLogin:
 
     def __init__(self, master):
@@ -167,20 +178,21 @@ class RegisterLogin:
         self.button_2 = Button(self.nameframe, text="Register",bg="azure", command=self.Register)
         self.button_2.grid(row=2, column=2)
 
-
+    """ send login message to server and wait for reply """
     def Login(self):
-        global User, sock
+        global User, sock, recvUdp
         User['account'] = self.entry_1.get()
         User['passwd'] = self.entry_2.get()
         print("Logging")
         print "Name : " + User['account']
         print "Passwd : " + User['passwd']
-        msg = {'command': 'Login', 'account':User['account'], 'password':User['passwd']}                  # need to discuss the msg format
+        msg = {'command': 'Login', 'account':User['account'], 'password':User['passwd'], 'port':recvUdp.getsockname()[1]}                  # need to discuss the msg format
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
 
-        self.ReactLogin()
+        self.ReactLogin()   # wait for reply
 
+    """ send register message to server and wait for reply """
     def Register(self):
         global User, sock
         User['account'] = self.entry_1.get()
@@ -194,8 +206,11 @@ class RegisterLogin:
         self.entry_1.delete(0, 'end')
         self.entry_2.delete(0, 'end')
 
-        self.ReactRegister()
+        self.ReactRegister()    # wait for reply
 
+
+    """ Waiting server send back the result
+        success or fail and pop up message box"""
     def ReactRegister(self):
         global reactRegister, msg, RegisLogin
 
@@ -216,8 +231,11 @@ class RegisterLogin:
                 reactRegister = 0
                 return
         RegisLogin.after(500, self.ReactRegister)
+        return
 
-                
+    
+    """ Waiting server send back the result
+        success or fail and pop up message box"""
     def ReactLogin(self):
         global reactLogin, msg, RegisLogin
         
@@ -231,8 +249,10 @@ class RegisterLogin:
                 reactLogin = 0
                 return         
         RegisLogin.after(500, self.ReactLogin)
+        return
 
 
+""" A class for main interface """
 class PikaChat:
 
     def __init__(self, master):
@@ -253,16 +273,81 @@ class PikaChat:
 
         #Test()
         self.showRequest()
+        self.RecvVoice()
+        self.popPika()
 
         self.popRoom()
         self.popRequest()
+    
+
+    """ When other invite you to play with him/her
+        pop up the message box, let user 
+        reply other's pika request """
+    def popPika(self):
+        global poppika, PikaMsg
+
+        if poppika == 1:
+            self.top = Toplevel()
+            self.top.title("Pika Request")
+            self.top.geometry('300x100')
+
+            self.msg = Message(self.top, text=PikaMsg['from'] + " want to play with You", width=200, font=14)
+            self.msg.place(x=30, y=25)
+
+            self.buttonYes = Button(self.top, text="Accept", bg='green', command=self.PikaAccept)
+            self.buttonYes.place(x=80, y=70)
+            self.buttonNo = Button(self.top, text="Reject", bg='red', command=self.PikaReject)
+            self.buttonNo.place(x=170, y=70)
+            poppika = 0
+            
+        root.after(500, self.popPika)
         
+
+    """ When you click on the accept button
+        send back the accept message and start playing"""
+    def PikaAccept(self):
+        global PikaMsg, User
+
+        msg = {'command': 'PikaAccept', 'account':User['account'], 'to':PikaMsg['from']}
+        data_string = json.dumps(msg) #data serialized
+        sock.send(data_string + '\n')
+
+        self.top.destroy()
+
+        thread.start_new_thread(self.pikaServer, ())
+
+
+    """ When you click on reject button
+        send back the accept message """
+    def PikaReject(self):
+        global PikaMsg, User
+
+        msg = {'command': 'PikaReject', 'account':User['account'], 'to':PikaMsg['from']}
+        data_string = json.dumps(msg) #data serialized
+        sock.send(data_string + '\n')
+
+        self.top.destroy()
+
+
+    """ Call terminal to turn on the game """
+    def pikaServer(self):
+        global PIKA_SER
+        print "start pika"
+        subprocess.call(PIKA_SER, shell=True)
+        
+
+    """ When login, aks server if there anyone
+        send friend request to you """
     def showRequest(self):
         global User
         msg = {'command': 'ShowRequest', 'account':User['account']}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
 
+
+    """ If friend send you a message to you, but the chating window
+        between you guys not yet existed, pop it up. Or someone send
+        the message to one of your group, pop it up """
     def popRoom(self):
         global newFriendMsg, newGroupMsg, ChatFrom, ChatFromGroup, ChatingList
 
@@ -274,11 +359,15 @@ class PikaChat:
         elif newGroupMsg == 1:
             GroupChatroom(ChatFromGroup['id']).PrintGroupMsg()
             ChatingList.append(ChatFromGroup['id'])
-            newGroupMsg = 0
-
-            
+            newGroupMsg = 0  
         root.after(500, self.popRoom)
 
+    """ If someone send request to you, pop up the windows
+        let user decide accept or not. P.s. recvFriendReq
+        is the signal when running the program, someone 
+        send request to you. While recvFriendReqS is the signal
+        when first login, you call showRequest, the server 
+        send back the result to you"""
     def popRequest(self):
         global recvFriendReq, reqAccount, recvFriendReqS, friend_request
 
@@ -291,6 +380,51 @@ class PikaChat:
             recvFriendReqS = 0
         root.after(500, self.popRequest)
 
+
+    """ Use python's module to recv the sound """
+    def RecvVoice(self):
+        FORMAT = pyaudio.paInt16
+        CHUNK = 256
+        CHANNELS = 2
+        RATE = 44100
+
+        p = pyaudio.PyAudio()
+
+        stream = p.open(format=FORMAT,
+                        channels = CHANNELS,
+                        rate = RATE,
+                        output = True,
+                        frames_per_buffer = CHUNK,
+                        )
+
+        thread.start_new_thread(self.udpRecv, (CHUNK, CHANNELS,))
+        thread.start_new_thread(self.play, (stream, CHUNK,))
+
+    """ Once the user login, open a udp socket to 
+        ready to listen from other users' voice """
+    def udpRecv(self, CHUNK, CHANNELS):
+        global recvUdp, recvframes
+        while True:
+            print "recving data"
+            try:
+                soundData, addr = recvUdp.recvfrom(CHUNK * CHANNELS * 2)
+                recvframes.append(soundData)
+            except:
+                pass
+
+    """ Play out the sound you received """
+    def play(self, stream, CHUNK):
+        global recvUdp, recvframes
+        BUFFER = 10
+        while True:
+            if len(recvframes) == BUFFER:
+                while True:
+                    try:
+                        stream.write(recvframes.pop(0), CHUNK)
+                    except:
+                        pass
+
+""" A class for deal with user profile """
 class Profile():
 
     def __init__(self, master):
@@ -308,6 +442,7 @@ class Profile():
         time.sleep(0.1)
         self.printProfile()
 
+    """ Can let user change their state """
     def userState(self):
         self.state = StringVar(self.master)
         self.state.set("online")                # default value
@@ -317,15 +452,16 @@ class Profile():
         option.config(bg='white', width=75)
         option.place(x=5, y=5, width=75)
 
+    """ If state changed, let server know """
     def updateState(self, value):
-        #global sock
+        global sock
         print(value)
         
         msg = {'command': 'updateState', 'account':User['account'], 'state':value}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
         
-
+    """ Print your profile on GUI """
     def printProfile(self):
 
         self.message_name = Message(self.master, anchor=W, bg = "white", text='Name: ' + User['name'], width=240)
@@ -335,6 +471,7 @@ class Profile():
         self.message_birth.place(x=80, y=35, width=220)
         self.message_motto.place(x=80, y=65, width=220)       
 
+    """ Edit your profile's window"""
     def editProfile(self):
 
         self.top = Toplevel()
@@ -359,6 +496,7 @@ class Profile():
         self.button_2 = Button(self.top, text="Back", command=self.top.destroy)
         self.button_2.grid(row=3, column=3)
 
+    """ Set the profile and update it on your screen"""
     def setProfile(self):
         global User
         User['name'] = self.entry_name.get()
@@ -371,20 +509,19 @@ class Profile():
         self.message_motto.grid_remove()
         self.printProfile()
 
+    """ send the update data to server """
     def sendProfile(self):
-        global sock, User
-
-        
+        global sock, User       
         msg = {'command': 'Profile', 'account':User['account'], 'nickname':User['name'], 'birthday':User['birthday'], 'motto':User['motto']}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
-        
-        
+          
         print "Name : " + User['name']
         print "Birthday : " + User['birthday']
         print "Motto : " + User['motto']
         self.top.destroy()
 
+    """ When login, ask your own profile """
     def getProfile(self):
         global sock, User
         
@@ -392,6 +529,7 @@ class Profile():
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
 
+    """ Can edit your password """
     def editPasswd(self):
 
         self.edit = Toplevel()
@@ -407,6 +545,7 @@ class Profile():
         self.button_2 = Button(self.edit, text="Back", command=self.edit.destroy)
         self.button_2.grid(row=1, column=3)
 
+    """ Send new password to server """
     def sendNewPasswd(self):
         global sock, User
 
@@ -419,6 +558,7 @@ class Profile():
         print "NewPasswd : " + User['passwd']
         self.edit.destroy()
 
+    """ Can delete your account, need to confirm """
     def deleteAccountCheck(self):
         self.delete = Toplevel()
         self.delete.title("deleting account")
@@ -432,6 +572,7 @@ class Profile():
         self.button_2 = Button(self.delete, text="Back", command=self.delete.destroy)
         self.button_2.grid(row=1, column=3)
 
+    """ Confirm if OK. If delete, let server know """
     def deleteAccount(self):
         global sock, User
         
@@ -447,6 +588,7 @@ class Profile():
             errorMessage("Deleting account password error")
             self.entry_passwd.delete(0, 'end')
 
+""" A class for presenting the tree view"""
 class FriendTree():
 
     def __init__(self, master):
@@ -472,9 +614,9 @@ class FriendTree():
         thread.start_new_thread(self.AskUpdating,())
         thread.start_new_thread(self.treeUpdate,())
 
-
+    """ Update the tree every 6 seconds """
     def AskUpdating(self):
-        global User
+        global User, sock
         while True:           
             
             msg = {'command': 'AskingUpdate', 'account':User['account']}
@@ -484,6 +626,7 @@ class FriendTree():
             print "Asking data"
             time.sleep(6)           #every 6 seconds ask for list                                   
 
+    """ Update it"""
     def treeUpdate(self):
         global updateTree, friendList, groupList, lock
         while 1:
@@ -498,6 +641,7 @@ class FriendTree():
                 print "Update Fin"
                 self.tree.place(x=6, y=50, width=370, height=500)
 
+    """ destroy the tree first """
     def reCreateTree(self):
         for i in self.tree.get_children():
             self.tree.delete(i)
@@ -505,6 +649,7 @@ class FriendTree():
         self.tree.insert("", 2, "dir2", text="Groups", tags=("Dir"))
         self.tree.tag_configure('Dir', background='yellow', font=16)
 
+    """ construct friend tree first """
     def friendUpdate(self, data):
         global friendMap
         for i in range(0, len(data), 3):
@@ -519,6 +664,7 @@ class FriendTree():
         print friendMap
         self.tree.item("dir1", open=True)
 
+    """ Then consruct the group tree """
     def groupUpdate(self, data):
         global groupMap, groupList
 
@@ -534,6 +680,10 @@ class FriendTree():
         print groupMap
         self.tree.item("dir2", open=True)
 
+
+    """ When double click the entry, pop up the 
+        chatroom or group's room (need to check if 
+        the window already existed)"""
     def AskToChat(self, event):
         global ChatingList
         item = self.tree.selection()[0]
@@ -555,13 +705,15 @@ class FriendTree():
                     ChatingList.append(self.tree.item(item,"values")[0])
                     print ChatingList
                     GroupChatroom(self.tree.item(item,"values")[0])
-         
+
+""" A class for user to create a new group """
 class CreateGroup():
 
     def __init__(self, master):
         self.button_group = Button(master, text="Create Group", width=50, bg='purple3', fg='white', command=self.Create)
         self.button_group.place(x=300, y=10, width=100)
 
+    """ Can enter the group's name """
     def Create(self):
         self.top = Toplevel()
         self.top.title("Create Group")
@@ -572,6 +724,7 @@ class CreateGroup():
         self.entry_create.place(x=0, y=40, width=200, height=25)
         self.button_create.place(x=200, y=40, width=100)
 
+    """ Tell server """
     def SendCreate(self):
         global sock
         self.createName = self.entry_create.get()
@@ -588,7 +741,7 @@ class CreateGroup():
         else:
             errorMessage("No data, Please enter again ~")
 
-
+""" A class to show the friend request """
 class AcceptFriend():
 
     def __init__(self, account):
@@ -606,6 +759,7 @@ class AcceptFriend():
         self.buttonNo.place(x=170, y=70)
 
     def Accept(self):
+        global sock
         print "accept"
         
         msg = {'command': 'AcceptInvite', 'account':User['account'], 'from':self.account}
@@ -614,16 +768,16 @@ class AcceptFriend():
         
         self.top.destroy()
     def Reject(self):
+        global sock
         print "reject"
 
-        
         msg = {'command': 'RejectInvite', 'account':User['account'], 'from':self.account}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
         
         self.top.destroy()
 
-
+""" A class can let user search for other user """
 class Search():
     
     def __init__(self, master):
@@ -632,6 +786,7 @@ class Search():
         self.entry_search.place(x=5, y=10, width=300, height=25)
         self.button_search.place(x=325, y=10, width=70)
 
+    """ Send the name to server """
     def search(self):
         global sock
         self.searchName = self.entry_search.get()
@@ -646,6 +801,7 @@ class Search():
         else:
             errorMessage("No data, Please enter again ~")
 
+    """ React to the message sended back """
     def ReactSearch(self):
         global reactSearch, searchMsg
         while 1:
@@ -669,14 +825,14 @@ class Search():
                 break
 
     def SendFriendRequest(self):
-
+        global sock
         msg = {'command': 'Invite', 'account':User['account'], 'to':self.searchName}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
         
         self.top.destroy()
         
-
+""" A class for one to one chatroom """
 class Chatroom():
 
     def __init__(self, account):
@@ -684,6 +840,7 @@ class Chatroom():
         self.chatroom = Toplevel()
         self.chatroom.title("Chatroom  " + friendMap[account])
         self.chatroom.geometry('400x500')
+        self.chatroom.resizable(width=False, height=False)
 
         self.who = account
 
@@ -721,142 +878,97 @@ class Chatroom():
 
         self.photo_mic = ImageTk.PhotoImage(Image.open("mic.jpg"))
         self.photo_pika = ImageTk.PhotoImage(Image.open("pika.jpg"))
-        self.button_mic = Button(self.topframe, image =self.photo_mic, command=self.Mic)
+        self.button_unfriend = Button(self.topframe, text='Unfriend', command=self.Unfriend)
+        self.button_unfriend.place(x=230, y=0, width=65, height=40)
+        self.button_mic = Button(self.topframe, image=self.photo_mic, command=self.Mic)
         self.button_mic.place(x=300, y=0, width=40, height=40)
-        self.button_pika = Button(self.topframe, image =self.photo_pika, command=self.Pika)
+        self.button_pika = Button(self.topframe, image=self.photo_pika, command=self.Pika)
         self.button_pika.place(x=350, y=0, width=40, height=40)
 
         self.LoadMsg()
 
-        self.waitReplyMic()
-        self.waitRequestMic()
-
         thread.start_new_thread(self.recvFromFriend,())
 
+    """ Can unfriend him/she """
+    def Unfriend(self):
+        global sock, User
+        print "unfriend"
+
+        msg = {'command': 'Unfriend', 'account':User['account'], 'who':self.who}
+        data_string = json.dumps(msg) #data serialized
+        sock.send(data_string + '\n')
+
+        self.chatroom.destroy()
+
+    """ Has a function let user chatting through mic """
     def Mic(self):
+        global sock, User, IPOK
+
+        msg = {'command': 'RequestIP', 'account':User['account'], 'who':self.who}
+        data_string = json.dumps(msg) #data serialized
+        sock.send(data_string + '\n')
+
+        while IPOK == 0:
+            pass
+        IPOK = 0
+
         Audio(self.who)
-    """
-    def Mic(self):
-        global sock, micBusy 
-        if micBusy == 1:
-            print "mic is busy"
-            return
 
-        print "Mic"
-        self.checkMic = Toplevel()
-        self.checkMic.title("Wait for check")
-        self.checkMic.geometry("300x100")
-
-        self.msg = Message(self.checkMic, text="Waiting " + self.who + " for chating", width=200, font=14)
-        self.msg.place(x=30, y=25)
-
-        self.button = Button(self.checkMic, text="Close", bg='red', command=self.SendCloseMic)
-        self.button.place(x=130, y=70)
-
-        msg = {'command': 'RequestForMic', 'account':User['account'], 'to':self.who}
-        data_string = json.dumps(msg) #data serialized
-        sock.send(data_string + '\n')
-        
-    def SendCloseMic(self):
-        global sock
-        print "close mic"
-        self.checkMic.destroy()
-        msg = {'command': 'CloseForMic', 'account':User['account'], 'who':self.who}
-        data_string = json.dumps(msg) #data serialized
-        sock.send(data_string + '\n')
-
-    def waitReplyMic(self):
-        global popMicReply, popMicAccept, popMicReject
-
-        if popMicAccept == 1:
-            self.checkMic.destroy()
-            popMicAccept = 0
-            self.startChat(self.who)
-        elif popMicReject == 1:
-            popMicReject = 0
-            self.checkMic.destroy()
-            print "reject"
-
-        self.chatroom.after(500, self.waitReplyMic)
-
-    def waitRequestMic(self):
-        global popMicRequest, micBusy, ReqMic
-        if micBusy == 1:
-            print "mic is busy"
-            return
-        if popMicRequest == 1:
-            
-            self.poprequest = Toplevel()
-            self.poprequest.title("Reply")
-            self.poprequest.geometry("300x100")
-
-            self.reqfrom = ReqMic['from']
-
-            self.msg = Message(self.poprequest, text=self.reqfrom + " want to chat with you", width=200, font=14)
-            self.msg.place(x=30, y=25)
-
-            self.buttonYes = Button(self.poprequest, text="Accept", bg='green', command=self.acceptMic)
-            self.buttonYes.place(x=80, y=70)
-            self.buttonNo = Button(self.poprequest, text="Reject", bg='red', command=self.rejectMic)
-            self.buttonNo.place(x=170, y=70)
-            checkClose()
-            popMicRequest = 0
-
-        root.after(500, self.waitRequestMic)
-
-    def checkClose(self):
-        global closeMic, micBusy
-        if closeMic == 1:
-            self.poprequest.destroy()
-            closeMic = 0
-            micBusy = 0
-            return
-        self.poprequest.after(500, self.checkClose)
-
-    def acceptMic(self):
-        global sock
-        msg = {'command': 'AcceptMic', 'account':User['account'], 'who':self.reqfrom}
-        data_string = json.dumps(msg) #data serialized
-        sock.send(data_string + '\n')
-        self.poprequest.destroy()
-        self.startChat(self.reqfrom)
-
-    def rejectMic(self):
-        global sock
-        msg = {'command': 'RejectMic', 'account':User['account'], 'who':self.reqfrom}
-        data_string = json.dumps(msg) #data serialized
-        sock.send(data_string + '\n')
-        self.poprequest.destroy()
-
-    def startChat(self, name):
-        micBusy = 1
-        Audio(name)
-    """
-
+    """ Has a game can let user play with friend """
     def Pika(self):
-        print "PikaBall"
-        pass
+        global sock, User
+        print "wait for friend"
 
+        msg = {'command': 'RequestPika', 'account':User['account'], 'to':self.who}
+        data_string = json.dumps(msg) #data serialized
+        sock.send(data_string + '\n')
+
+        self.waitForPika()
+
+    """ Wait your friend's accept signal """
+    def waitForPika(self):
+        global pikaaccept, pikareject
+
+        if pikaaccept == 1:
+            print 'Accept'
+            thread.start_new_thread(self.pikaClient, ())
+            pikaaccept = 0
+        elif pikareject == 1:
+            print 'Reject'
+            pikareject = 0
+
+        root.after(500, self.waitForPika)
+
+    """ If your friend accept, start the game """
+    def pikaClient(self):
+        print 'start pika'
+        time.sleep(3)
+        global PikaMsg
+        IP = PikaMsg['ip']
+        command = PIKA_Cli + ' ' + IP
+        subprocess.call(command, shell=True)
+
+    """ receive the message sended by friend """
     def recvFromFriend(self):
-        global loadFriendMsg, lock, ChatFrom
+        global printFriendMsg, lock, ChatFrom
 
         while 1:
-            if loadFriendMsg == 1:
+            if printFriendMsg == 1:
                 lock.acquire()
                 if self.who == ChatFrom['from']:
                     self.PrintFriendMsg()
-                loadFriendMsg = 0
+                printFriendMsg = 0
                 lock.release()
             else:
                 pass
-
+    """ When open the chatroom, request your friend's profile """
     def getFriendProfile(self):
         global User, sock
         msg = {'command': 'getFriendProfile', 'account':User['account'], 'who':self.who}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
         
-
+    """ Show it on GUI """
     def printFriendProfile(self):
         global Friend
 
@@ -867,30 +979,31 @@ class Chatroom():
         self.message_birth.grid(row=0, column=2)
         self.message_motto.grid(row=1, column=1, sticky=W)
 
+    """ When press enter, get the message """
     def PressEnter(self, event):
         self.EntryText = self.EntryBox.get("0.0",END)
         self.SendToServer()
 
+    """ When press button, get the message + '\n' """
     def PressButton(self):
-        #Write message to chat window
         self.EntryText = self.EntryBox.get("0.0",END) + '\n'
         self.SendToServer()
 
+    """ Show the message on GUI, send to server """
     def SendToServer(self):
+        global sock
         self.PrintMyMsg()
 
-        
         msg = {'command': 'ChatToOne', 'account':User['account'], 'to':self.who, 'message':self.EntryText}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
         
-
         #Scroll to the bottom of chat windows
         self.ChatLog.yview(END)
-
         #Erace previous message in Entry Box
         self.EntryBox.delete("0.0",END)
     
+    """ When open the chatroom, load the history message """
     def LoadMsg(self):
         global User
         data = Log.GetMessageData(User['account'], self.who)
@@ -900,6 +1013,7 @@ class Chatroom():
             else:
                 self.LoadFriendMsg(item)
 
+    """ If the history message is mine """
     def LoadMyMsg(self, item):
         self.ChatLog.config(state=NORMAL)
         if self.ChatLog.index('end') != None:
@@ -910,7 +1024,9 @@ class Chatroom():
             self.ChatLog.config(state=DISABLED)
             self.ChatLog.yview(END)
 
+    """ If the history message is other's """
     def LoadFriendMsg(self, item):
+        global friendMap
         self.ChatLog.config(state=NORMAL)
         
         self.LineNumber = float(self.ChatLog.index('end'))-1.0
@@ -923,8 +1039,9 @@ class Chatroom():
         self.ChatLog.config(state=DISABLED)
         self.ChatLog.yview(END)
 
-
+    """ Print your message, store it in log """
     def PrintMyMsg(self):
+        global User
         if self.EntryText != '':
             self.ChatLog.config(state=NORMAL)
             if self.ChatLog.index('end') != None:
@@ -936,8 +1053,9 @@ class Chatroom():
                 self.ChatLog.yview(END)
                 Log.CreateMessage(User['account'], self.who, self.EntryText)
 
+    """ Print friend's message, store it in log """
     def PrintFriendMsg(self):
-        global ChatFrom
+        global ChatFrom, friendMap, User
         if ChatFrom['message'] != '':
             self.ChatLog.config(state=NORMAL)
         
@@ -950,106 +1068,83 @@ class Chatroom():
             self.ChatLog.tag_config("Friend", foreground="#04B404", font=("Arial", 12, "bold"))
             self.ChatLog.config(state=DISABLED)
             self.ChatLog.yview(END)
-            Log.CreateMessage(ChatFrom['from'], User['account'], self.EntryText)
+            Log.CreateMessage(ChatFrom['from'], User['account'], ChatFrom['message'])
 
+    """ When close the chatroom, remove from chatting list """
     def CloseChatroom(self):
         global ChatingList
         print "close chatroom"
         ChatingList.remove(self.who)
         self.chatroom.destroy()
 
-class Audio:
+""" A class for sending voice """
+class Audio():
 
     def __init__(self, who):
         self.startchat = Toplevel()
         self.startchat.title("Chating")
         self.startchat.geometry("300x100")
+        self.close = 0
 
-        self.button = Button(self.startchat, text="Close", bg='red', command=self.SendCloseMic)
+        self.message = Message(self.startchat, text = "Chat to " + who, width=200)
+        self.message.place(x=100, y=30)
+
+        self.button = Button(self.startchat, text="Close", bg='red', command=self.CloseMic)
         self.button.place(x=130, y=70)
         self.send = 1
         self.who = who
+        
+        self.SendVoice()
 
-        self.frames_send = []           #voice out 
-        self.frames_play = []           #voice in
-        self.CHUNK = 256
-        self.FORMAT = pyaudio.paInt16
-        self.CHANNELS = 2
-        self.RATE = 44100
-        self.p = pyaudio.PyAudio()
-        self.stream = self.p.open(format = self.FORMAT,
-                            channels = self.CHANNELS,
-                            rate = self.RATE,
-                            input = True,
-                            frames_per_buffer = self.CHUNK,
-                            )
-
-
-        self.Tr = Thread(target = Record, args = (self.stream, self.CHUNK,))
-        self.Ts = Thread(target = sendRecord)
-        self.Tu = Thread(target = Play, args= (self.stream,self.CHUNK,))
-
-        self.Tr.setDaemon(True)
-        self.Ts.setDaemon(True)
-        self.Tt.setDaemon(True)
-        self.Tu.setDaemon(True)
-        self.Tr.start()
-        self.Ts.start()
-        self.Tt.start()
-        self.Tu.start()
-        self.Tr.join()
-        self.Ts.join()
-        self.Tt.join()
-        self.Tu.join()
-
-    def SendCloseMic(self):
-        global sock, micBusy
-        print "close mic"
-        self.send = 0
+    """ close the mic """
+    def CloseMic(self):
+        self.close = 1
         self.startchat.destroy()
-        msg = {'command': 'CloseMic', 'account':User['account'], 'who':self.who}
-        data_string = json.dumps(msg) #data serialized
-        sock.send(data_string + '\n')
-        micBusy = 0
-    
-    def sendRecord(self):               # Socket Initialization
-        global sock
-        while self.send:
-            if len(self.frames_send)>0:
-                msg = {'command': 'SendVoice', 'account':User['account'], 'to':self.who, 'voice':frames_send.pop(0)}
-                data_string = json.dumps(msg)
-                self.sock.send(data_string + '\n')
 
-    def Record(self, stream, CHUNK):
+    """ Open the stream file """
+    def SendVoice(self):
+        CHUNK = 256
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 2
+        RATE = 44100
 
-        while self.send:
-            self.frames_send.append(stream.read(CHUNK))
+        p = pyaudio.PyAudio()
 
-    def GetPlay(self, CHUNK):
-        global soundData, lock
-        while self.send:
-            if recvAudio == 1:
-                lock.acquire()
-                self.frames_play.append(soundData)
-                lock.release()
-                recvAudio = 0
+        stream = p.open(format = FORMAT,
+                        channels = CHANNELS,
+                        rate = RATE,
+                        input = True,
+                        frames_per_buffer = CHUNK,
+                        )
+        thread.start_new_thread(self.udpStream, ())
+        thread.start_new_thread(self.record, (stream, CHUNK,))
 
-    def Play(self, stream, CHUNK):
-        BUFFER = 10
-        while self.send:
-            if len(self.frames_play) == BUFFER:
-                while True:
-                    stream.write(self.frames_play.pop(0),self.CHUNK)
+    """ Send it to friend """
+    def udpStream(self):  
+        global sendUdp, FriendIP, sendframes
+        IP = FriendIP
+        while self.close == 0:
+            if len(sendframes) > 0:
+                print "sending data"
+                sendUdp.sendto(sendframes.pop(0), (IP[0], IP[1]))
 
+        sendUdp.close()
 
+    """ record the voice """
+    def record(self, stream, CHUNK):    
+        global sendframes
+        while self.close == 0:
+            sendframes.append(stream.read(CHUNK))
+        
+""" A class for group chating """
 class GroupChatroom():
 
     def __init__(self, groupID):
         global groupMap
         self.chatroom = Toplevel()
-        #self.chatroom.title("GroupChatroom  ")
         self.chatroom.title("GroupChatroom  " + groupMap[groupID])
         self.chatroom.geometry('400x500')
+        self.chatroom.resizable(width=False, height=False)
 
         self.groupID = groupID
 
@@ -1062,7 +1157,6 @@ class GroupChatroom():
         self.button_leavegroup.place(x=6, y=15, width=100)
         self.entry_member = Entry(self.chatroom)
         self.entry_member.place(x=144, y=15, width=150, height=25)
-
 
         #Bind a scrollbar to the Chat window
         self.scrollbar = Scrollbar(self.chatroom, command=self.ChatLog.yview, cursor="heart")
@@ -1088,6 +1182,7 @@ class GroupChatroom():
 
         thread.start_new_thread(self.recvFromGroup,())
     
+    """ Add member to the group """
     def AddMember(self):
         global sock
         self.member = self.entry_member.get()
@@ -1098,8 +1193,10 @@ class GroupChatroom():
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
 
+    """ User leave the group """
     def LeaveGroup(self):
         print 'leave group'
+        global sock
 
         msg = {'command': 'LeaveGroup', 'account':User['account'], 'id':self.groupID}
         data_string = json.dumps(msg) #data serialized
@@ -1108,39 +1205,40 @@ class GroupChatroom():
         self.chatroom.destroy()
 
     def recvFromGroup(self):
-        global loadGroupMsg, ChatFromGroup
+        global printGroupMsg, ChatFromGroup
 
         while 1:
-            if loadGroupMsg == 1:
+            if printGroupMsg == 1:
                 lock.acquire()
                 if self.groupID == ChatFromGroup['id']:
                     self.PrintGroupMsg()
-                loadGroupMsg = 0
+                printGroupMsg = 0
                 lock.release()
 
-
+    """ When press enter, get the message """
     def PressEnter(self, event):
+        self.EntryText = self.EntryBox.get("0.0",END)
         self.SendToServer()
 
+    """ When press button, get the message + '\n' """
+    def PressButton(self):
+        self.EntryText = self.EntryBox.get("0.0",END) + '\n'
+        self.SendToServer()
+
+    """ Send it to the server """
     def SendToServer(self):
-        global User
-        #Write message to chat window
-        self.EntryText = self.EntryBox.get("0.0",END)
-        
+        global User, sock
         self.PrintMyMsg()
 
         msg = {'command': 'ChatToGroup', 'id':self.groupID, 'account':User['account'], 'message':self.EntryText}
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
-        
-
         #Scroll to the bottom of chat windows
         self.ChatLog.yview(END)
-
         #Erace previous message in Entry Box
         self.EntryBox.delete("0.0",END)
             
-    
+    """ Print my own message on GUI """
     def PrintMyMsg(self):
         if self.EntryText != '':
             self.ChatLog.config(state=NORMAL)
@@ -1152,6 +1250,7 @@ class GroupChatroom():
                 self.ChatLog.config(state=DISABLED)
                 self.ChatLog.yview(END)
 
+    """ Print others' message on GUI """
     def PrintGroupMsg(self):
         global ChatFromGroup
         if ChatFromGroup['message'] != '':
@@ -1167,24 +1266,28 @@ class GroupChatroom():
             self.ChatLog.config(state=DISABLED)
             self.ChatLog.yview(END)
 
+    """ Close the group chatroom """
     def CloseGroupChatroom(self):
         global ChatingList
         print "close group chatroom"
         ChatingList.remove(self.groupID)
         self.chatroom.destroy()
 
-
+""" A function to recv all socket from server """
 def recvServer():
     
-    global sock, Friend, lock, loadFriendMsg, loadGroupMsg, ChatFrom, ChatFromGroup, reactRegister, msg, reactLogin
+    global sock, Friend, lock, printFriendMsg, printGroupMsg, ChatFrom, ChatFromGroup, reactRegister, msg, reactLogin
     global reqAccount, msg, reactLogin, newFriendMsg, newGroupMsg, reactSearch, recvFriendReq, searchMsg, friend_request
-    global recvFriendReqS, friendList, groupList, updateTree, User, popMicRequest, popMicAccept, popMicReject, ReplyMic, ReqMic
-    global closeMic, recvAudio
+    global recvFriendReqS, friendList, groupList, updateTree, User, FriendIP, IPOK, PikaMsg, poppika
+    global pikaaccept, pikareject
 
     while 1:
         
         msgRecv = sock.recv(1300)
-        msg = json.loads(msgRecv)
+        try:
+            msg = json.loads(msgRecv)
+        except:
+            continue
         print msg
         lock.acquire()
         if msg['command'] == 'Register':
@@ -1205,19 +1308,25 @@ def recvServer():
             Friend['birthday'] = msg['birthday']
             Friend['motto'] = msg['motto']
 
+        elif msg['command'] == 'Unfriend':
+            if msg['data'] == 'ok':
+                print 'OK'
+            else:
+                print "GG"
+
         elif msg['command'] == 'ChatToOne':
             ChatFrom = msg
             if ChatFrom['from'] not in ChatingList:
                 newFriendMsg = 1
             else:
-                loadFriendMsg = 1
+                printFriendMsg = 1
 
         elif msg['command'] == 'ChatToGroup':
             ChatFromGroup = msg
             if ChatFromGroup['id'] not in ChatingList:
                 newGroupMsg = 1
             else:
-                loadGroupMsg = 1
+                printGroupMsg = 1
 
         elif msg['command'] == 'AskingUpdate':
             friendList = msg['friend']
@@ -1248,27 +1357,22 @@ def recvServer():
                 print 'OK'
             else:
                 print "GG"
-        elif msg['command'] == 'SendVoice':
-            soundData = msg['voise']
-            recvAudio = 1
 
-        """
-        elif msg['command'] == 'RequestForMic':
-            ReqMic = msg
-            popMicRequest = 1
-            print "GG"
+        elif msg['command'] == 'RequestIP':
+            FriendIP = msg['ip']
+            IPOK = 1
 
-        elif msg['command'] == 'CloseForMic':
-            closeMic = 1
+        elif msg['command'] == 'RequestPika':
+            PikaMsg = msg
+            poppika = 1
 
-        elif msg['command'] == 'AcceptMic':
-            ReplyMic = msg
-            popMicAccept = 1
+        elif msg['command'] == 'PikaAccept':
+            PikaMsg = msg
+            pikaaccept = 1
 
-        elif msg['command'] == 'RejectMic':
-            ReplyMic = msg
-            popMicReject = 1
-        """
+        elif msg['command'] == 'PikaReject':
+            PikaMsg = msg
+            pikareject = 1
 
         lock.release()
         
@@ -1280,12 +1384,6 @@ def Exit():
 
 def SendLogout():
     print "Logout"
-    
-    """ 
-    msg = {'command': 'Logout', 'account':User['account']}
-    data_string = json.dumps(msg) #data serialized
-    sock.send(data_string + '\n')
-    """
     
     root.destroy()
 
@@ -1300,7 +1398,7 @@ root.mainloop()
 root.destroy()
 """
 Server['IP'] = '114.25.190.10'
-Server['port'] = 8000
+Server['port'] = 8001
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
@@ -1309,10 +1407,18 @@ except sock.error:
     print "connect error"
     exit(0)
 
+print "recvudp socket"
+recvUdp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+recvUdp.bind(('0.0.0.0', 0))
+print recvUdp.getsockname()[1]
+
+print "sendudp socket"
+sendUdp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
 
 lock = thread.allocate_lock()
-loadFriendMsg = 0
-loadGroupMsg = 0
+printFriendMsg = 0
+printGroupMsg = 0
 reactRegister = 0
 reactLogin = 0
 reactSearch = 0
@@ -1325,14 +1431,15 @@ recvAudio = 0
 micBusy = 0
 pikaBusy = 0
 
-popMicRequest = 0
-popMicAccept = 0
-popMicReject = 0
-ReplyMic = 0
-ReqMic = 0
-closeMic = 0
+IPOK = 0
+poppika = 0
+pikareject = 0
+pikaaccept = 0
+recvframes = []
+sendframes = []
 
 msg = {}
+PikaMsg = {}
 searchMsg = {}
 ChatFrom = {}
 searchName = ""
