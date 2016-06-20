@@ -11,8 +11,10 @@ import Log
 import subprocess
 
 
-PIKA_SER = 'C:/Python27/python.exe Server.py'
-PIKA_Cli = 'C:/Python27/python.exe pikaclient.py'
+PIKA_SER = 'python Server.py'
+PIKA_Cli = 'python pikaclient.py'
+
+LOCALIP = '192.168.1.100'
 
 
 """ for user to enter server's IP port """
@@ -186,7 +188,7 @@ class RegisterLogin:
         print("Logging")
         print "Name : " + User['account']
         print "Passwd : " + User['passwd']
-        msg = {'command': 'Login', 'account':User['account'], 'password':User['passwd'], 'port':recvUdp.getsockname()[1]}                  # need to discuss the msg format
+        msg = {'command': 'Login', 'account':User['account'], 'password':User['passwd'], 'port':recvUdp.getsockname()[1], 'localip':LOCALIP}                  # need to discuss the msg format
         data_string = json.dumps(msg) #data serialized
         sock.send(data_string + '\n')
 
@@ -1128,7 +1130,7 @@ class Audio():
                 print "sending data"
                 sendUdp.sendto(sendframes.pop(0), (IP[0], IP[1]))
 
-        sendUdp.close()
+        #sendUdp.close()
 
     """ record the voice """
     def record(self, stream, CHUNK):    
@@ -1397,7 +1399,7 @@ root.protocol('WM_DELETE_WINDOW', Exit)  # root is your root window
 root.mainloop()
 root.destroy()
 """
-Server['IP'] = '114.25.190.10'
+Server['IP'] = '114.25.190.10'  
 Server['port'] = 8001
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
