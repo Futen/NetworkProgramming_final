@@ -32,10 +32,10 @@ def CreateGroup(dataIn):
         return False
 def AddMemberToGroup(dataIn):
     if dataIn['id'] in GroupTable:
-        for person in dataIn['who']:
-            if not person in GroupTable[dataIn['id']]['member'] and person in DB.UserData:
-                GroupTable[dataIn['id']]['member'].append(person)
-        return True
+        person = dataIn['who']
+        if not person in GroupTable[dataIn['id']]['member'] and person in DB.UserData:
+            GroupTable[dataIn['id']]['member'].append(person)
+            return True
     return False
 def RemoveMemberFromGroup(dataIn):
     if dataIn['id'] in GroupTable:
