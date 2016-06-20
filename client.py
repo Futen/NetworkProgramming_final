@@ -1130,7 +1130,7 @@ class Audio():
                 print "sending data"
                 sendUdp.sendto(sendframes.pop(0), (IP[0], IP[1]))
 
-        sendUdp.close()
+        #sendUdp.close()
 
     """ record the voice """
     def record(self, stream, CHUNK):    
