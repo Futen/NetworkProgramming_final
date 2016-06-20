@@ -29,3 +29,5 @@ REQUESTIP = 'RequestIP'
 PIKAREQUEST = 'RequestPika'
 ACCEPTPIKA = 'PikaAccept'
 REJECTPIKA = 'PikaReject'
+
+REMOVEFRIEND = 'Unfriend'

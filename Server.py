@@ -222,7 +222,13 @@ class MyHandler(ss.StreamRequestHandler):
                     print command
                     sendData = PikaReject(self.recvData)
                     SocketLst[self.recvData['to']].sendall(sendData)
-
+                elif command == Pm.REMOVEFRIEND:
+                    print command
+                    result = DB.RemoveFriend(self.recvData)
+                    if resilt:
+                        self.wfile.write(SuccessMessage(command))
+                    else:
+                        self.wfile.write(FailMessage(command))
                 #print DB.UserData
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
