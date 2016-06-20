@@ -24,7 +24,8 @@ def RequestIP(dataIn):
     who = dataIn['who']
     data['command'] = dataIn['command']
     if who in SocketLst and who in AddrLst:
-        data['ip'] = list(AddrLst[who][0].client_address)
+        #data['ip'] = list(AddrLst[who][0].client_address)
+        data['ip'] = [AddrLst[who][2], AddrLst[who][1]]
         data['ip'][1] = AddrLst[who][1]
         data['port'] = AddrLst[who][1]
     return json.dumps(data)
@@ -35,7 +36,7 @@ def PikaRequest(dataIn):
     return json.dumps(data)
 def PikaAccept(dataIn):
     data = {'command':dataIn['command']}
-    data['ip'] = AddrLst[dataIn['account']][0].client_address[0]
+    data['ip'] = AddrLst[dataIn['account']][2]
     return json.dumps(data)
 def PikaReject(dataIn):
     data = {'command':dataIn['command']}
@@ -72,6 +73,7 @@ class MyHandler(ss.StreamRequestHandler):
                         AddrLst[self.recvData['account']] = []
                         AddrLst[self.recvData['account']].append(self)
                         AddrLst[self.recvData['account']].append(self.recvData['port'])
+                        AddrLst[self.recvData['account']].append(self.recvData['localip'])
                         DB.SaveUserData()
                         self.wfile.write(SuccessMessage(command))
                     else:
@@ -131,6 +133,7 @@ class MyHandler(ss.StreamRequestHandler):
                         DB.SaveUserData()
                         if self.recvData['to'] in SocketLst:
                             sendData = DB.FriendRequestPacket(self.recvData)
+                            print sendData
                             SocketLst[self.recvData['to']].sendall(sendData)
                         #self.wfile.write(SuccessMessage(command))
                     else:
@@ -154,6 +157,7 @@ class MyHandler(ss.StreamRequestHandler):
                 elif command == Pm.ASKINGINFO:
                     print command
                     data = CR.AskingUpdate(self.recvData)
+                    print data
                     self.wfile.write(data)
                 elif command == Pm.ACCEPTINVITE:
                     print command
