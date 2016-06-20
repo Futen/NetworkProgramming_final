@@ -11,10 +11,10 @@ import Log
 import subprocess
 
 
-PIKA_SER = 'python Server.py'
-PIKA_Cli = 'python pikaclient.py'
+PIKA_SER = 'C:/Python27/python.exe Server.py'
+PIKA_Cli = 'C:/Python27/python.exe pikaclient.py'
 
-LOCALIP = '192.168.1.100'
+LOCALIP = '192.168.1.105'
 
 
 """ for user to enter server's IP port """
@@ -1130,7 +1130,7 @@ class Audio():
                 print "sending data"
                 sendUdp.sendto(sendframes.pop(0), (IP[0], IP[1]))
 
-        #sendUdp.close()
+        sendUdp.close()
 
     """ record the voice """
     def record(self, stream, CHUNK):    
@@ -1400,7 +1400,7 @@ root.mainloop()
 root.destroy()
 """
 Server['IP'] = '114.25.190.10'  
-Server['port'] = 8001
+Server['port'] = 8000
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
