@@ -44,7 +44,6 @@ def PikaReject(dataIn):
     return json.dumps(data)
 class MyHandler(ss.StreamRequestHandler):
     def handle(self):
-        print 'GGWP'
         print (self.client_address)
         try:
             while True:
@@ -157,7 +156,7 @@ class MyHandler(ss.StreamRequestHandler):
                 elif command == Pm.ASKINGINFO:
                     print command
                     data = CR.AskingUpdate(self.recvData)
-                    print data
+                    #print data
                     self.wfile.write(data)
                 elif command == Pm.ACCEPTINVITE:
                     print command
@@ -191,11 +190,11 @@ class MyHandler(ss.StreamRequestHandler):
                 elif command == Pm.ADDMEMBER:
                     print command
                     result = CR.AddMemberToGroup(self.recvData) 
-                    print result
-                    print self.recvData
+                    #print result
+                    #print self.recvData
                     if result:
                         CR.SaveGroupData()
-                        print CR.GroupTable
+                        #print CR.GroupTable
                         self.wfile.write(SuccessMessage(command))
                     else:
                         self.wfile.write(FailMessage(command))
@@ -240,7 +239,27 @@ class MyHandler(ss.StreamRequestHandler):
                 #self.data = json.loads(self.data)
                 #self.wfile.write(self.data)
         except socket.error:
-            a = account
+            try:
+                a = account
+                print 'account leave:'%account
+                if a in DB.OnlineLst:
+                    DB.OnlineLst.remove(a)
+                if a in DB.BusyLst:
+                    DB.BusyLst.remove(a)
+                if a in DB.OfflineLst:
+                    DB.OfflineLst.remove(a)
+                if a in DB.LoginLst:
+                    DB.LoginLst.remove(a)
+            except:
+                pass
+
+        try:
+            for one in SocketLst:
+                if SocketLst[one] is self.request:
+                    key = one
+                    a = key
+                    break
+            SocketLst.pop(key, None)
             if a in DB.OnlineLst:
                 DB.OnlineLst.remove(a)
             if a in DB.BusyLst:
@@ -250,16 +269,11 @@ class MyHandler(ss.StreamRequestHandler):
             if a in DB.LoginLst:
                 DB.LoginLst.remove(a)
 
-        try:
-            for one in SocketLst:
-                if SocketLst[one] is self.request:
-                    key = one
-                    break
-            SocketLst.pop(key, None)
         except KeyError:
             pass
 
         print SocketLst
+        print DB.LoginLst
 class ThreadedTCPServer(ss.ThreadingMixIn, ss.TCPServer):
     pass
 #def client(ip, port, message):
