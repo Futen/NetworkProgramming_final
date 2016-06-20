@@ -162,7 +162,7 @@ class MyHandler(ss.StreamRequestHandler):
                         print 'accept gg'
                 elif command == Pm.REJECTINVITE:
                     print command
-                    result = DB.AcceptFriendRequest(self.recvData)
+                    result = DB.RejectFriendRequest(self.recvData)
                     if not result:
                         print 'reject gg'
                 elif command == Pm.CHATTOONE:
@@ -225,7 +225,7 @@ class MyHandler(ss.StreamRequestHandler):
                 elif command == Pm.REMOVEFRIEND:
                     print command
                     result = DB.RemoveFriend(self.recvData)
-                    if resilt:
+                    if result:
                         self.wfile.write(SuccessMessage(command))
                     else:
                         self.wfile.write(FailMessage(command))

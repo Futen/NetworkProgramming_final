@@ -122,10 +122,10 @@ def RejectFriendRequest(dataIn):
     else:
         return False
 def RemoveFriend(dataIn):
-    if dataIn['account'] in UserData and dataIn['to'] in UserData:
-        if dataIn['to'] in UserData[dataIn['account']]['friend_lst']:
-            UserData[dataIn['account']]['friend_lst'].remove(dataIn['to'])
-            UserData[dataIn['to']]['friend_lst'].remove(dataIn['account'])
+    if dataIn['account'] in UserData and dataIn['who'] in UserData:
+        if dataIn['who'] in UserData[dataIn['account']]['friend_lst']:
+            UserData[dataIn['account']]['friend_lst'].remove(dataIn['who'])
+            UserData[dataIn['who']]['friend_lst'].remove(dataIn['account'])
             return True
     return False
 def GetFriendRequest(dataIn):
